@@ -74,8 +74,15 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
-
+        dims = np.hstack([input_dim, hidden_dims, num_classes])
+        for i in range(self.num_layers):
+            self.params['W' + str(i + 1)] = weight_scale * np.random.randn(dims[i], dims[i + 1])
+            self.params['b' + str(i + 1)] = np.zeros(dims[i + 1])
+        
+        # if self.normalization != None:
+        #     for i in range(self.num_layers):
+        #         self.params['gamma' + str(i + 1)] = 
+        
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -148,7 +155,13 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        h = np.maximum(0, X.dot(self.params['W1']) + self.params['b1'])
+        for i in range(1, self.num_layers - 1):
+            h = np.maximum(0, h.dot(self.params['W' + str(i + 1)]) + self.params['b' + str(i + 1)])
+        scores = h.dot(self.params['W' + str(self.num_layers)]) + self.params['b' + str(self.num_layers)]
+
+        scores -= np.max(scores, axis=1, keepdims=True)
+        p = np.exp(scores) / np.sum(np.exp(scores), axis=1, keepdims=True)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -175,8 +188,15 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        loss = np.sum(-np.log(p[np.arange(X.shape[0], y)])) / X.shape[0]
 
+        s = 0.0
+        s += np.sum(self.params['W1'] ** 2)
+        for i in range(1, self.num_layers - 1):
+            s += np.sum(self.params['W' + str(i + 1)] ** 2)
+        s += np.sum(self.params['W' + str(self.num_layers)] ** 2)
+        loss += 0.5 * self.reg * s
+        
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
