@@ -36,11 +36,13 @@ def svm_loss_naive(W, X, y, reg):
             margin = scores[j] - correct_class_score + 1 # note delta = 1
             if margin > 0:
                 loss += margin
+                dW[:, j] += X[i]
+                dW[:, y[i]] -= X[i]
 
     # Right now the loss is a sum over all training examples, but we want it
     # to be an average instead so we divide by num_train.
     loss /= num_train
-
+    
     # Add regularization to the loss.
     loss += reg * np.sum(W * W)
 
@@ -54,7 +56,8 @@ def svm_loss_naive(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    dW /= (1.0 * num_train)
+    dW += 2.0 * reg * W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     
@@ -78,7 +81,14 @@ def svm_loss_vectorized(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    num_train = X.shape[0]
+    scores = np.dot(X, W)
+    correct_class_score = scores[np.arange(num_train), y]  # different with scores[:, y]
+    margins = np.maximum(0, scores - correct_class_score[:, np.newaxis] + 1)
+    margins[np.arange(num_train), y] = 0
+    loss += np.sum(margins)
+    loss /= num_train
+    loss += reg * np.sum(W * W)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -93,7 +103,12 @@ def svm_loss_vectorized(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    margins[margins > 0] = 1.0
+    # for each example, calculate #items > 0 in margin vector 
+    num_to_loss = np.sum(margins, axis=1)
+
+    margins[np.arange(num_train), y] = -num_to_loss
+    dW = np.dot(X.T, margins) / num_train + 2 * reg * W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
