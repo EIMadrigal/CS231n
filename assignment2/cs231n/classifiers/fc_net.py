@@ -155,13 +155,14 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        h = np.maximum(0, X.dot(self.params['W1']) + self.params['b1'])
-        for i in range(1, self.num_layers - 1):
-            h = np.maximum(0, h.dot(self.params['W' + str(i + 1)]) + self.params['b' + str(i + 1)])
-        scores = h.dot(self.params['W' + str(self.num_layers)]) + self.params['b' + str(self.num_layers)]
+        for i in range(self.num_layers - 1):
+            w = self.params['W' + str(i + 1)]
+            b = self.params['b' + str(i + 1)]
+            X, cache = affine_relu_forward(X, w, b)
 
-        scores -= np.max(scores, axis=1, keepdims=True)
-        p = np.exp(scores) / np.sum(np.exp(scores), axis=1, keepdims=True)
+        w = self.params['W' + str(self.num_layers)]
+        b = self.params['b' + str(self.num_layers)]
+        scores, cache = affine_forward(X, w, b)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -188,15 +189,13 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        loss = np.sum(-np.log(p[np.arange(X.shape[0], y)])) / X.shape[0]
+        loss, softmax_grads = softmax_loss(scores, y)
+        for i in range(self.num_layers):
+            w = self.params['W' + str(i + 1)]
+            loss += 0.5 * self.reg * np.sum(w ** 2)
 
-        s = 0.0
-        s += np.sum(self.params['W1'] ** 2)
-        for i in range(1, self.num_layers - 1):
-            s += np.sum(self.params['W' + str(i + 1)] ** 2)
-        s += np.sum(self.params['W' + str(self.num_layers)] ** 2)
-        loss += 0.5 * self.reg * s
-        
+        for i in range(self.num_layers, )
+
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
