@@ -140,7 +140,13 @@ def softmax_loss(x, y):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+    x -= np.max(x, axis=1, keepdims=True)
+    p = np.exp(x) / np.sum(np.exp(x), axis=1, keepdims=True)
+    loss = np.sum(-np.log(p[np.arange(x.shape[0]), y])) / x.shape[0]
     
+    dx = p
+    dx[np.arange(x.shape[0]), y] -= 1
+    dx /= x.shape[0]
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
