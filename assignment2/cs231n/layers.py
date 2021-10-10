@@ -225,7 +225,15 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        sample_mean = np.mean(x, axis=0)
+        sample_var = np.var(x, axis=0)
+        x_norm = (x - sample_mean) / np.sqrt(sample_var + eps)
+        out = gamma * x_norm + beta
+
+        cache = (x, x_norm, sample_mean, sample_var, gamma, eps)
+
+        running_mean = momentum * running_mean + (1 - momentum) * sample_mean
+        running_var = momentum * running_var + (1 - momentum) * sample_var
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -240,7 +248,8 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        x_norm = (x - running_mean) / np.sqrt(running_var + eps)
+        out = gamma * x_norm + beta
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -281,7 +290,15 @@ def batchnorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, x_norm, sample_mean, sample_var, gamma, eps = cache
+    dgamma = np.sum(dout * x_norm, axis=0)
+    dbeta = np.sum(dout, axis=0)
+    dx_norm = gamma * dout
+    dx_norm_numerator = dx_norm / np.sqrt(sample_var + eps)
+    dx_norm_denominator = np.sum(dx_norm * (x - sample_mean), axis=0)
+    dvar = -0.5 * (sample_var + eps) ** (-1.5) * dx_norm_denominator
+    dmean = -1.0 * np.sum(dx_norm_numerator, axis=0) - 2.0 * dvar * np.mean(x - sample_mean, axis=0)
+    dx = dx_norm_numerator + dmean / x.shape[0] + 2.0 * dvar * (x - sample_mean) / x.shape[0]
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -315,7 +332,13 @@ def batchnorm_backward_alt(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, x_norm, sample_mean, sample_var, gamma, eps = cache
+    dx_norm = gamma * dout
+    dvar = np.sum(-0.5 * dx_norm * (x - sample_mean) * (sample_var + eps) ** (-1.5), axis=0)
+    dmean = np.sum(-dx_norm / np.sqrt(sample_var + eps), axis=0)
+    dx = dx_norm / np.sqrt(sample_var + eps) + 2.0 * dvar * (x - sample_mean) / dout.shape[0] + dmean / dout.shape[0]
+    dgamma = np.sum(dout * x_norm, axis=0)
+    dbeta = np.sum(dout, axis=0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -350,7 +373,7 @@ def layernorm_forward(x, gamma, beta, ln_param):
     eps = ln_param.get("eps", 1e-5)
     ###########################################################################
     # TODO: Implement the training-time forward pass for layer norm.          #
-    # Normalize the incoming data, and scale and  shift the normalized data   #
+    # Normalize the incoming data, and scale and shift the normalized data    #
     #  using gamma and beta.                                                  #
     # HINT: this can be done by slightly modifying your training-time         #
     # implementation of  batch normalization, and inserting a line or two of  #
@@ -360,7 +383,14 @@ def layernorm_forward(x, gamma, beta, ln_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x_T = x.T
+    sample_mean = np.mean(x_T, axis=0)
+    sample_var = np.var(x_T, axis=0)
+    x_norm_T = (x_T - sample_mean) / np.sqrt(sample_var + eps)
+    x_norm = x_norm_T.T
+    out = gamma * x_norm + beta
+
+    cache = (x, x_norm, sample_mean, sample_var, gamma, eps)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -394,7 +424,15 @@ def layernorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, x_norm, sample_mean, sample_var, gamma, eps = cache
+    x_T, dout_T = x.T, dout.T
+    dx_norm = gamma[:, np.newaxis] * dout_T
+    dvar = np.sum(-0.5 * dx_norm * (x_T - sample_mean) * (sample_var + eps) ** (-1.5), axis=0)
+    dmean = np.sum(-dx_norm / np.sqrt(sample_var + eps), axis=0)
+    dx_T = dx_norm / np.sqrt(sample_var + eps) + 2.0 * dvar * (x_T - sample_mean) / dout_T.shape[0] + dmean / dout_T.shape[0]
+    dx = dx_T.T
+    dgamma = np.sum(dout * x_norm, axis=0)
+    dbeta = np.sum(dout, axis=0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
